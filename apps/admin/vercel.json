@@ -1,0 +1,5 @@
+{
+  "framework": "vite",
+  "buildCommand": "cd ../.. && pnpm --filter @gateway/shared build && cd apps/admin && pnpm build",
+  "outputDirectory": "dist"
+}
