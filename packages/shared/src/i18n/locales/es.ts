@@ -1,0 +1,33 @@
+import type { MessageCatalog } from "./en.js";
+
+/** Starter catalog — not production-certified translation. */
+export const es: MessageCatalog = {
+  "gift.send": "Enviar",
+  "gift.insufficientBalance": "Saldo de monedas insuficiente.",
+  "gift.unavailable": "Este regalo no está disponible.",
+  "gift.sent": "{sender} envió {gift} x{quantity}",
+  "gift.trayTitle": "Regalos",
+  "gift.recharge": "Recargar",
+  "gift.categories": "Categorías",
+  "battle.start": "Iniciar batalla",
+  "battle.winner": "Ganador: {name}",
+  "battle.draw": "La batalla terminó en empate",
+  "battle.me": "Yo",
+  "battle.opponent": "Oponente",
+  "battle.timer": "Batalla {time}",
+  "battle.vs": "VS",
+  "wallet.balance": "Saldo: {balance}",
+  "wallet.recharge": "Recargar monedas",
+  "common.error": "Algo salió mal.",
+  "common.loading": "Cargando…",
+  "common.save": "Guardar",
+  "common.cancel": "Cancelar",
+  "common.delete": "Eliminar",
+  "common.confirm": "Confirmar",
+  "admin.gifts": "Regalos",
+  "admin.battles": "Batallas",
+  "admin.users": "Usuarios",
+  "admin.transactions": "Transacciones",
+  "admin.settings": "Ajustes",
+  "admin.dashboard": "Panel",
+};

@@ -1,0 +1,33 @@
+import type { MessageCatalog } from "./en.js";
+
+/** Starter RTL catalog — not production-certified translation. */
+export const ar: MessageCatalog = {
+  "gift.send": "إرسال",
+  "gift.insufficientBalance": "رصيد العملات غير كافٍ.",
+  "gift.unavailable": "هذه الهدية غير متاحة.",
+  "gift.sent": "{sender} أرسل {gift} x{quantity}",
+  "gift.trayTitle": "الهدايا",
+  "gift.recharge": "إعادة الشحن",
+  "gift.categories": "الفئات",
+  "battle.start": "بدء المعركة",
+  "battle.winner": "الفائز: {name}",
+  "battle.draw": "انتهت المعركة بالتعادل",
+  "battle.me": "أنا",
+  "battle.opponent": "الخصم",
+  "battle.timer": "المعركة {time}",
+  "battle.vs": "ضد",
+  "wallet.balance": "الرصيد: {balance}",
+  "wallet.recharge": "شحن العملات",
+  "common.error": "حدث خطأ ما.",
+  "common.loading": "جارٍ التحميل…",
+  "common.save": "حفظ",
+  "common.cancel": "إلغاء",
+  "common.delete": "حذف",
+  "common.confirm": "تأكيد",
+  "admin.gifts": "الهدايا",
+  "admin.battles": "المعارك",
+  "admin.users": "المستخدمون",
+  "admin.transactions": "المعاملات",
+  "admin.settings": "الإعدادات",
+  "admin.dashboard": "لوحة التحكم",
+};

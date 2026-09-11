@@ -1,0 +1,36 @@
+{
+  "name": "@gateway/adapters",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo \"lint: adapters ok\"",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@gateway/core": "workspace:*",
+    "@gateway/shared": "workspace:*",
+    "stripe": "^17.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.9"
+  },
+  "peerDependencies": {
+    "socket.io": "^4.8.1"
+  },
+  "peerDependenciesMeta": {
+    "socket.io": { "optional": true }
+  }
+}
