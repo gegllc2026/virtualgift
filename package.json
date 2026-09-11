@@ -1,0 +1,32 @@
+{
+  "name": "gateway-gifting",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Reusable livestream virtual gifting and battle plugin for Gateway Entertainment Group",
+  "packageManager": "pnpm@10.28.2",
+  "scripts": {
+    "build": "pnpm -r --filter=./packages/* build && pnpm -r --filter=./apps/* build",
+    "dev": "pnpm --parallel --filter @gateway/api --filter @gateway/admin --filter @gateway/demo dev",
+    "dev:api": "pnpm --filter @gateway/api dev",
+    "dev:admin": "pnpm --filter @gateway/admin dev",
+    "dev:demo": "pnpm --filter @gateway/demo dev",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r --filter=./packages/* test && pnpm --filter @gateway/api test",
+    "db:generate": "pnpm --filter @gateway/api db:generate",
+    "db:migrate": "pnpm --filter @gateway/api db:migrate",
+    "db:seed": "pnpm --filter @gateway/api db:seed",
+    "db:push": "pnpm --filter @gateway/api db:push"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "esbuild"
+    ]
+  }
+}
