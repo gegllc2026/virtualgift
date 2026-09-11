@@ -1,0 +1,417 @@
+// Prisma schema for Gateway Virtual Gifting & Battle Plugin
+// Production / Supabase uses PostgreSQL.
+// For offline SQLite demo only: set provider = "sqlite" and DATABASE_URL="file:./prisma/dev.db"
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  VIEWER
+  CREATOR
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+  ANALYST
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum WalletStatus {
+  ACTIVE
+  FROZEN
+  CLOSED
+}
+
+enum WalletTxType {
+  PURCHASE
+  GIFT_SENT
+  GIFT_RECEIVED
+  REFUND
+  ADMIN_ADJUSTMENT
+  BONUS
+  REVERSAL
+}
+
+enum WalletTxStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+enum AnimationType {
+  LOTTIE
+  SVGA
+  GIF
+  MP4
+  WEBM
+  IMAGE
+  NONE
+}
+
+enum GiftSendStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+enum LivestreamStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+  UNKNOWN
+}
+
+enum BattleStatus {
+  CREATED
+  WAITING
+  STARTING
+  ACTIVE
+  FINISHED
+  CANCELLED
+}
+
+enum BattleParticipantStatus {
+  INVITED
+  JOINED
+  READY
+  ACTIVE
+  LEFT
+}
+
+enum PaymentStatus {
+  PENDING
+  REQUIRES_ACTION
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum IdempotencyStatus {
+  STARTED
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id             String     @id @default(cuid())
+  externalUserId String     @unique
+  username       String
+  displayName    String
+  avatar         String?
+  role           UserRole   @default(VIEWER)
+  status         UserStatus @default(ACTIVE)
+  locale         String     @default("en")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  wallet              Wallet?
+  sentGifts           GiftSend[]            @relation("GiftSender")
+  receivedGifts       GiftSend[]            @relation("GiftReceiver")
+  walletTransactions  WalletTransaction[]
+  payments            Payment[]
+  battleParticipants  BattleParticipant[]
+  battleEvents        BattleEvent[]
+  auditLogs           AuditLog[]
+  idempotencyKeys     IdempotencyRecord[]
+  notifications       Notification[]
+
+  @@index([role])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Wallet {
+  id        String       @id @default(cuid())
+  userId    String       @unique
+  balance   Int          @default(0)
+  currency  String       @default("COIN")
+  status    WalletStatus @default(ACTIVE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user         User                @relation(fields: [userId], references: [id])
+  transactions WalletTransaction[]
+
+  @@index([status])
+}
+
+model WalletTransaction {
+  id            String         @id @default(cuid())
+  userId        String
+  walletId      String
+  type          WalletTxType
+  amount        Int
+  balanceBefore Int
+  balanceAfter  Int
+  reference     String
+  status        WalletTxStatus @default(COMPLETED)
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@unique([reference])
+  @@index([userId, createdAt])
+  @@index([walletId, createdAt])
+  @@index([type])
+}
+
+model GiftCategory {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  gifts Gift[]
+}
+
+model Gift {
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  description   String?
+  categoryId    String?
+  coinCost      Int
+  iconUrl       String?
+  animationUrl  String?
+  animationType AnimationType @default(NONE)
+  isActive      Boolean       @default(true)
+  sortOrder     Int           @default(0)
+  metadata      Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  category   GiftCategory? @relation(fields: [categoryId], references: [id])
+  sends      GiftSend[]
+  battleEvents BattleEvent[]
+
+  @@index([isActive, sortOrder])
+  @@index([categoryId])
+  @@index([coinCost])
+}
+
+model GiftSend {
+  id           String         @id @default(cuid())
+  giftId       String
+  senderId     String
+  receiverId   String
+  livestreamId String
+  battleId     String?
+  quantity     Int
+  unitCost     Int
+  totalCost    Int
+  status       GiftSendStatus @default(COMPLETED)
+  createdAt    DateTime       @default(now())
+
+  gift       Gift        @relation(fields: [giftId], references: [id])
+  sender     User        @relation("GiftSender", fields: [senderId], references: [id])
+  receiver   User        @relation("GiftReceiver", fields: [receiverId], references: [id])
+  livestream Livestream  @relation(fields: [livestreamId], references: [id])
+  battle     Battle?     @relation(fields: [battleId], references: [id])
+
+  @@index([livestreamId, createdAt])
+  @@index([senderId, createdAt])
+  @@index([receiverId, createdAt])
+  @@index([battleId])
+}
+
+/// Integration reference to host livestream (e.g. Agora channel)
+model Livestream {
+  id                   String           @id @default(cuid())
+  externalLivestreamId String
+  provider             String           @default("agora")
+  hostUserId           String?
+  title                String?
+  status               LivestreamStatus @default(UNKNOWN)
+  metadata             Json?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  giftSends GiftSend[]
+  battles   Battle[]
+
+  @@unique([provider, externalLivestreamId])
+  @@index([status])
+  @@index([hostUserId])
+}
+
+model Battle {
+  id           String       @id @default(cuid())
+  livestreamId String
+  status       BattleStatus @default(CREATED)
+  battleType   String       @default("PK")
+  duration     Int          @default(300)
+  scoreMultiplier Float     @default(1)
+  startTime    DateTime?
+  endTime      DateTime?
+  winnerId     String?
+  settings     Json?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  livestream   Livestream          @relation(fields: [livestreamId], references: [id])
+  participants BattleParticipant[]
+  events       BattleEvent[]
+  giftSends    GiftSend[]
+
+  @@index([livestreamId, status])
+  @@index([status, createdAt])
+}
+
+model BattleParticipant {
+  id        String                  @id @default(cuid())
+  battleId  String
+  userId    String
+  score     Int                     @default(0)
+  giftCount Int                     @default(0)
+  status    BattleParticipantStatus @default(INVITED)
+  joinedAt  DateTime                @default(now())
+
+  battle Battle @relation(fields: [battleId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([battleId, userId])
+  @@index([userId])
+}
+
+model BattleEvent {
+  id        String   @id @default(cuid())
+  battleId  String
+  userId    String?
+  eventType String
+  giftId    String?
+  points    Int      @default(0)
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  battle Battle @relation(fields: [battleId], references: [id])
+  user   User?  @relation(fields: [userId], references: [id])
+  gift   Gift?  @relation(fields: [giftId], references: [id])
+
+  @@index([battleId, createdAt])
+}
+
+model CoinPackage {
+  id            String   @id @default(cuid())
+  name          String
+  coinAmount    Int
+  price         Int
+  currency      String   @default("USD")
+  stripePriceId String?
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  payments Payment[]
+
+  @@index([isActive, sortOrder])
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  userId            String
+  coinPackageId     String?
+  provider          String        @default("stripe")
+  providerPaymentId String?
+  amount            Int
+  currency          String
+  coinAmount        Int
+  status            PaymentStatus @default(PENDING)
+  metadata          Json?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id])
+  coinPackage CoinPackage? @relation(fields: [coinPackageId], references: [id])
+
+  @@unique([provider, providerPaymentId])
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+model IdempotencyRecord {
+  id           String            @id @default(cuid())
+  userId       String
+  key          String
+  requestHash  String?
+  responseBody Json?
+  status       IdempotencyStatus @default(STARTED)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, key])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  metadata  Json?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model LeaderboardSnapshot {
+  id        String   @id @default(cuid())
+  scope     String
+  scopeId   String
+  periodKey String
+  entries   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([scope, scopeId, periodKey])
+  @@index([scope, periodKey])
+}
